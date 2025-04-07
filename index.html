@@ -1,48 +1,87 @@
 <!DOCTYPE html>
-<html>
-<body>
-    <head>
-        <!-- Required meta tags -->
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-    
-        <!-- Bootstrap CSS -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    
-        <title>Hello, world!</title>
-      </head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Google Sheet Search + Preview</title>
+  <!-- ✅ Bootstrap 5 CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light py-4">
 
-    <table class="table">
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">First</th>
-            <th scope="col">Last</th>
-            <th scope="col">Handle</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th scope="row">1</th>
-            <td>Mark</td>
-            <td>Otto</td>
-            <td>@mdo</td>
-          </tr>
-          <tr>
-            <th scope="row">2</th>
-            <td>Jacob</td>
-            <td>Thornton</td>
-            <td>@fat</td>
-          </tr>
-          <tr>
-            <th scope="row">3</th>
-            <td colspan="2">Larry the Bird</td>
-            <td>@twitter</td>
-          </tr>
-        </tbody>
-      </table>
+  <div class="container">
+    <h2 class="mb-4">Tìm Thông Tin Lễ Hội Của Bạn</h2>
 
-      <!-- Option 1: Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <div class="input-group mb-4">
+      <input type="text" id="searchInput" class="form-control" placeholder="Nhập MSSS">
+      <button class="btn btn-primary" onclick="searchSheet()">Search</button>
+    </div>
+
+    <div class="mb-5">
+      <!-- <h4>Kết quả tìm kiếm</h4> -->
+      <div id="results" class="table-responsive"></div>
+    </div>
+
+    <div>
+      <h4>Bảng Xếp Hạng Top 10 Lễ Hội</h4>
+      <div id="preview" class="table-responsive"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const previewSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrMx-khH_5EfH2N1FsxU5RLtVQx_nPUuxOvBwyprYSSLUEr3JU4rPdwEg-UQz_-XC3FVPT1ogp6Fcp/pub?gid=1226702362&single=true&output=tsv';
+    const searchSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrMx-khH_5EfH2N1FsxU5RLtVQx_nPUuxOvBwyprYSSLUEr3JU4rPdwEg-UQz_-XC3FVPT1ogp6Fcp/pub?gid=1526475251&single=true&output=tsv';
+
+    const columnToSearch = 2;
+
+    async function fetchTSVData(url) {
+      const res = await fetch(url);
+      const text = await res.text();
+      return text.trim().split('\n').map(row => row.split('\t'));
+    }
+
+    function renderTable(data, containerId) {
+      if (data.length === 0) {
+        document.getElementById(containerId).innerHTML = '<p class="text-danger">No data to display.</p>';
+        return;
+      }
+
+      let table = '<table class="table table-bordered table-striped table-hover"><thead><tr>';
+      data[0].forEach(header => table += `<th>${header}</th>`);
+      table += '</tr></thead><tbody>';
+
+      data.slice(1).forEach(row => {
+        table += '<tr>' + row.map(val => `<td>${val}</td>`).join('') + '</tr>';
+      });
+
+      table += '</tbody></table>';
+      document.getElementById(containerId).innerHTML = table;
+    }
+
+    async function init() {
+      const previewData = await fetchTSVData(previewSheetURL);
+      const topFive = previewData.slice(1, 11);
+      topFive.unshift(previewData[0]); // add headers
+      renderTable(topFive, 'preview');
+    }
+
+    async function searchSheet() {
+      const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+      const searchData = await fetchTSVData(searchSheetURL);
+      const headers = searchData[0];
+      const rows = searchData.slice(1);
+
+      const match = rows.find(row => row[columnToSearch]?.trim().toLowerCase() === searchTerm);
+
+      if (match) {
+        renderTable([headers, match], 'results');
+      } else {
+        document.getElementById('results').innerHTML = '<p class="text-warning">No match found.</p>';
+      }
+    }
+
+    window.onload = init;
+  </script>
+
 </body>
 </html>
