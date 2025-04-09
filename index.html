@@ -156,7 +156,35 @@
         return;
       }
 
-      let table = '<table class="table table-bordered table-hover table-striped"><thead class="table-success"><tr>';
+      let table = '<table class="table table-hover table-striped"><thead class="table-warning"><tr>';
+      data[0].forEach(header => table += `<th>${header}</th>`);
+      table += '</tr></thead><tbody>';
+
+        data.slice(1).forEach((row, index) => {
+          // 🎨 Color code based on row index
+          let rowClass = '';
+          if (index === 0) rowClass = 'table-info';
+          else if (index === 1) rowClass = 'table-primary';
+          else if (index === 2) rowClass = 'table-secondary';
+
+          table += `<tr class="${rowClass}">`;
+          row.forEach(cell => {
+            table += `<td>${cell}</td>`;
+          });
+          table += '</tr>';
+        });
+
+      table += '</tbody></table>';
+      document.getElementById(containerId).innerHTML = table;
+    }
+
+    function renderTableSearch(data, containerId) {
+      if (data.length === 0) {
+        document.getElementById(containerId).innerHTML = '<p class="text-danger">No data to display.</p>';
+        return;
+      }
+
+      let table = '<table class="table table-hover table-striped-columns"><thead><tr>';
       data[0].forEach(header => table += `<th>${header}</th>`);
       table += '</tr></thead><tbody>';
 
@@ -187,7 +215,7 @@
         // Remove column 0 from both headers and matched row
         const filteredHeaders = headers.filter((_, i) => i !== 0);
         const filteredMatch = match.filter((_, i) => i !== 0);
-        renderTable([filteredHeaders, filteredMatch], 'results');
+        renderTableSearch([filteredHeaders, filteredMatch], 'results');
       } else {
         document.getElementById('results').innerHTML = '<p class="text-warning">No match found.</p>';
       }
